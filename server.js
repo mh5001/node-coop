@@ -8,7 +8,12 @@ const server = app.listen(8080, () => {
 });
 const io = require('socket.io')(server);
 
+let hasHost = false;
+
 io.on('connection', socket => {
+	if (hasHost) {
+		socket.emit('hasHost');
+	}
 	socket.on('init', () => {
 		console.log('Virtual Gamepad created');
 		socket.gamepad = new Gamepad();
@@ -16,6 +21,10 @@ io.on('connection', socket => {
 	socket.on('disconnect', () => {
 		socket.gamepad?.destroy?.();
 	});
+	socket.on('host', () => {
+		socket.broadcast.emit('hasHost');
+		hasHost = true;
+	})
 	socket.on('p', (buttonIndex, state) => {
 		socket.gamepad?.button(buttonIndex, state);
 	});

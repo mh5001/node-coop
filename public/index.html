@@ -28,17 +28,38 @@
 			width: 10vw;
 			height: 5vh;
 		}
+		span {
+			display: flex;
+			flex-flow: row;
+		}
 	</style>
 </head>
 <body>
+	<span><p>Are you host:</p><input type="checkbox" id="isHost"></input></span>
 	<script src="rtc.js"></script>
 	<script>
 		window.addEventListener('load', () => {
 			const socket = io();
-			if (!localStorage.getItem('NO_GAMEPAD')) {
+			const hostCheck = document.getElementById('isHost');
+			socket.on('hasHost', () => {
+				localStorage.setItem('NO_GAMEPAD', 'false');
+				hostCheck.parentElement.style.display = 'none';
 				void joinOffer(socket);
 				socket.emit('init');
-			} else {
+			});
+			hostCheck.onchange = e => {
+					if (e.target.checked) {
+						localStorage.setItem('NO_GAMEPAD', 'true');
+						socket.emit('host');
+					} else {
+						localStorage.setItem('NO_GAMEPAD', 'false');
+					}
+				}
+			if (localStorage.getItem('NO_GAMEPAD') == 'false') {
+				hostCheck.parentElement.style.display = 'none';
+				void joinOffer(socket);
+				socket.emit('init');
+			} else if (localStorage.getItem('NO_GAMEPAD') == 'true') {
 				void createOffer(socket);
 			}
 			window.addEventListener("gamepadconnected", ({gamepad}) => {
