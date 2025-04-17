@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=1, initial-scale=1.0">
+	<title>Document</title>
+	<script src="socket.io/socket.io.js"></script>
+	<style>
+		body {
+			background-color: darkslategray;
+		}
+		* {
+			margin: 0;
+		}
+		.wrapper {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		#video {
+			width: 80vw;
+			height: auto;
+		}
+		button {
+			position: absolute;
+			top: 25vw;
+			left: 93vh;
+			width: 10vw;
+			height: 5vh;
+		}
+	</style>
+</head>
+<body>
+	<script src="rtc.js"></script>
+	<script>
+		window.addEventListener('load', () => {
+			const socket = io();
+			if (!localStorage.getItem('NO_GAMEPAD')) {
+				void joinOffer(socket);
+				socket.emit('init');
+			} else {
+				void createOffer(socket);
+			}
+			window.addEventListener("gamepadconnected", ({gamepad}) => {
+				let lastValue = gamepad.buttons.map(button => button.pressed || button.value);
+				let lastAxes = gamepad.axes.map((axes) => axes || 0);
+				function gamepadLoop() {
+					const chromeIsGaypad = navigator.getGamepads()[0];
+					for (let i = 0; i < chromeIsGaypad.buttons.length; i++) {
+						const buttton = chromeIsGaypad.buttons[i];
+						const value = buttton.pressed || buttton.value;						
+						if (lastValue[i] != value) {
+							if ([8, 9].includes(i) && chromeIsGaypad.buttons[8 - i + 9].pressed) continue;
+							socket.emit('p', i, value);
+							lastValue[i] = value;
+						}
+					}
+					for (let i = 0; i < chromeIsGaypad.axes.length; i++) {
+						const axes = chromeIsGaypad.axes[i];
+						if (Math.abs(lastAxes[i] - axes) > 2e-2) {
+							socket.emit('x', i, `${axes}`);
+							lastAxes[i] = axes;
+						}
+					}
+					requestAnimationFrame(gamepadLoop);
+				}
+				gamepadLoop();
+			});
+		});
+	</script>
+	<div class="wrapper">
+		<video id="video" autoplay controls></video>
+	</div>
+</body>
+</html>
